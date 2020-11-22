@@ -20,7 +20,7 @@ from video import VideoRecorder
 from agent.baseline_agent import BaselineAgent
 from agent.bisim_agent import BisimAgent
 from agent.deepmdp_agent import DeepMDPAgent
-from agents.navigation.carla_env import CarlaEnv
+# from agents.navigation.carla_env import CarlaEnv
 
 
 def parse_args():
@@ -30,24 +30,29 @@ def parse_args():
     parser.add_argument('--task_name', default='run')
     parser.add_argument('--image_size', default=84, type=int)
     parser.add_argument('--action_repeat', default=1, type=int)
-    parser.add_argument('--frame_stack', default=3, type=int)
+    parser.add_argument('--frame_stack', default=6, type=int)
     parser.add_argument('--resource_files', type=str)
     parser.add_argument('--eval_resource_files', type=str)
-    parser.add_argument('--img_source', default=None, type=str, choices=['color', 'noise', 'images', 'video', 'none'])
+    parser.add_argument('--img_source', default=None, type=str,
+                        choices=['color', 'noise', 'images', 'video', 'none'])
     parser.add_argument('--total_frames', default=1000, type=int)
     # replay buffer
     parser.add_argument('--replay_buffer_capacity', default=1000000, type=int)
     # train
-    parser.add_argument('--agent', default='bisim', type=str, choices=['baseline', 'bisim', 'deepmdp'])
+    parser.add_argument('--agent', default='bisim', type=str,
+                        choices=['baseline', 'bisim', 'deepmdp'])
     parser.add_argument('--init_steps', default=1000, type=int)
     parser.add_argument('--num_train_steps', default=1000000, type=int)
     parser.add_argument('--batch_size', default=512, type=int)
     parser.add_argument('--hidden_dim', default=256, type=int)
-    parser.add_argument('--k', default=3, type=int, help='number of steps for inverse model')
-    parser.add_argument('--bisim_coef', default=0.5, type=float, help='coefficient for bisim terms')
+    parser.add_argument('--k', default=3, type=int,
+                        help='number of steps for inverse model')
+    parser.add_argument('--bisim_coef', default=0.5,
+                        type=float, help='coefficient for bisim terms')
     parser.add_argument('--load_encoder', default=None, type=str)
     # eval
-    parser.add_argument('--eval_freq', default=10, type=int)  # TODO: master had 10000
+    parser.add_argument('--eval_freq', default=10,
+                        type=int)  # TODO: master had 10000
     parser.add_argument('--num_eval_episodes', default=20, type=int)
     # critic
     parser.add_argument('--critic_lr', default=1e-3, type=float)
@@ -61,12 +66,14 @@ def parse_args():
     parser.add_argument('--actor_log_std_max', default=2, type=float)
     parser.add_argument('--actor_update_freq', default=2, type=int)
     # encoder/decoder
-    parser.add_argument('--encoder_type', default='pixel', type=str, choices=['pixel', 'pixelCarla096', 'pixelCarla098', 'identity'])
+    parser.add_argument('--encoder_type', default='pixel', type=str,
+                        choices=['pixel', 'pixelCarla096', 'pixelCarla098', 'identity'])
     parser.add_argument('--encoder_feature_dim', default=50, type=int)
     parser.add_argument('--encoder_lr', default=1e-3, type=float)
     parser.add_argument('--encoder_tau', default=0.005, type=float)
     parser.add_argument('--encoder_stride', default=1, type=int)
-    parser.add_argument('--decoder_type', default='pixel', type=str, choices=['pixel', 'identity', 'contrastive', 'reward', 'inverse', 'reconstruction'])
+    parser.add_argument('--decoder_type', default='pixel', type=str, choices=[
+                        'pixel', 'identity', 'contrastive', 'reward', 'inverse', 'reconstruction'])
     parser.add_argument('--decoder_lr', default=1e-3, type=float)
     parser.add_argument('--decoder_update_freq', default=1, type=int)
     parser.add_argument('--decoder_weight_lambda', default=0.0, type=float)
@@ -80,12 +87,13 @@ def parse_args():
     # misc
     parser.add_argument('--seed', default=1, type=int)
     parser.add_argument('--work_dir', default='.', type=str)
-    parser.add_argument('--save_tb', default=False, action='store_true')
-    parser.add_argument('--save_model', default=False, action='store_true')
-    parser.add_argument('--save_buffer', default=False, action='store_true')
-    parser.add_argument('--save_video', default=False, action='store_true')
-    parser.add_argument('--transition_model_type', default='', type=str, choices=['', 'deterministic', 'probabilistic', 'ensemble'])
-    parser.add_argument('--render', default=False, action='store_true')
+    parser.add_argument('--save_tb', default=True, action='store_true')
+    parser.add_argument('--save_model', default=True, action='store_true')
+    parser.add_argument('--save_buffer', default=True, action='store_true')
+    parser.add_argument('--save_video', default=True, action='store_true')
+    parser.add_argument('--transition_model_type', default='', type=str,
+                        choices=['', 'deterministic', 'probabilistic', 'ensemble'])
+    parser.add_argument('--render', default=True, action='store_true')
     parser.add_argument('--port', default=2000, type=int)
     args = parser.parse_args()
     return args
@@ -120,8 +128,10 @@ def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_di
             if embed_viz_dir:
                 obses.append(obs)
                 with torch.no_grad():
-                    values.append(min(agent.critic(torch.Tensor(obs).to(device).unsqueeze(0), torch.Tensor(action).to(device).unsqueeze(0))).item())
-                    embeddings.append(agent.critic.encoder(torch.Tensor(obs).unsqueeze(0).to(device)).cpu().detach().numpy())
+                    values.append(min(agent.critic(torch.Tensor(obs).to(device).unsqueeze(
+                        0), torch.Tensor(action).to(device).unsqueeze(0))).item())
+                    embeddings.append(agent.critic.encoder(torch.Tensor(
+                        obs).unsqueeze(0).to(device)).cpu().detach().numpy())
 
             obs, reward, done, info = env.step(action)
 
@@ -146,14 +156,16 @@ def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_di
 
     if embed_viz_dir:
         dataset = {'obs': obses, 'values': values, 'embeddings': embeddings}
-        torch.save(dataset, os.path.join(embed_viz_dir, 'train_dataset_{}.pt'.format(step)))
+        torch.save(dataset, os.path.join(embed_viz_dir,
+                                         'train_dataset_{}.pt'.format(step)))
 
     L.dump(step)
 
     if do_carla_metrics:
         print('METRICS--------------------------')
         print("reason_each_episode_ended: {}".format(reason_each_episode_ended))
-        print("distance_driven_each_episode: {}".format(distance_driven_each_episode))
+        print("distance_driven_each_episode: {}".format(
+            distance_driven_each_episode))
         print('crash_intensity: {}'.format(crash_intensity / num_episodes))
         print('steer: {}'.format(steer / count))
         print('brake: {}'.format(brake / count))
@@ -261,8 +273,9 @@ def make_agent(obs_shape, action_shape, args, device):
 
     if args.load_encoder:
         model_dict = agent.actor.encoder.state_dict()
-        encoder_dict = torch.load(args.load_encoder) 
-        encoder_dict = {k[8:]: v for k, v in encoder_dict.items() if 'encoder.' in k}  # hack to remove encoder. string
+        encoder_dict = torch.load(args.load_encoder)
+        encoder_dict = {k[8:]: v for k, v in encoder_dict.items(
+        ) if 'encoder.' in k}  # hack to remove encoder. string
         agent.actor.encoder.load_state_dict(encoder_dict)
         agent.critic.encoder.load_state_dict(encoder_dict)
 
@@ -274,16 +287,17 @@ def main():
     utils.set_seed_everywhere(args.seed)
 
     if args.domain_name == 'carla':
-        env = CarlaEnv(
-            render_display=args.render,  # for local debugging only
-            display_text=args.render,  # for local debugging only
-            changing_weather_speed=0.1,  # [0, +inf)
-            rl_image_size=args.image_size,
-            max_episode_steps=1000,
-            frame_skip=args.action_repeat,
-            is_other_cars=True,
-            port=args.port
-        )
+        pass
+        # env = CarlaEnv(
+        #     render_display=args.render,  # for local debugging only
+        #     display_text=args.render,  # for local debugging only
+        #     changing_weather_speed=0.1,  # [0, +inf)
+        #     rl_image_size=args.image_size,
+        #     max_episode_steps=1000,
+        #     frame_skip=args.action_repeat,
+        #     is_other_cars=True,
+        #     port=args.port
+        # )
         # TODO: implement env.seed(args.seed) ?
 
         eval_env = env
@@ -370,7 +384,8 @@ def main():
             # evaluate agent periodically
             if episode % args.eval_freq == 0:
                 L.log('eval/episode', episode, step)
-                evaluate(eval_env, agent, video, args.num_eval_episodes, L, step)
+                evaluate(eval_env, agent, video,
+                         args.num_eval_episodes, L, step)
                 if args.save_model:
                     agent.save(model_dir, step)
                 if args.save_buffer:
@@ -409,7 +424,8 @@ def main():
         )
         episode_reward += reward
 
-        replay_buffer.add(obs, action, curr_reward, reward, next_obs, done_bool)
+        replay_buffer.add(obs, action, curr_reward,
+                          reward, next_obs, done_bool)
         np.copyto(replay_buffer.k_obses[replay_buffer.idx - args.k], next_obs)
 
         obs = next_obs

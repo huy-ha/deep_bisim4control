@@ -21,7 +21,7 @@ from agent.baseline_agent import BaselineAgent
 from agent.bisim_agent import BisimAgent
 from agent.deepmdp_agent import DeepMDPAgent
 # from agents.navigation.carla_env import CarlaEnv
-
+from procgen import ProcgenGym3Env
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--task_name', default='run')
     parser.add_argument('--image_size', default=84, type=int)
     parser.add_argument('--action_repeat', default=1, type=int)
-    parser.add_argument('--frame_stack', default=6, type=int)
+    parser.add_argument('--frame_stack', default=3, type=int)
     parser.add_argument('--resource_files', type=str)
     parser.add_argument('--eval_resource_files', type=str)
     parser.add_argument('--img_source', default=None, type=str,
@@ -285,51 +285,16 @@ def make_agent(obs_shape, action_shape, args, device):
 def main():
     args = parse_args()
     utils.set_seed_everywhere(args.seed)
-
-    if args.domain_name == 'carla':
-        pass
-        # env = CarlaEnv(
-        #     render_display=args.render,  # for local debugging only
-        #     display_text=args.render,  # for local debugging only
-        #     changing_weather_speed=0.1,  # [0, +inf)
-        #     rl_image_size=args.image_size,
-        #     max_episode_steps=1000,
-        #     frame_skip=args.action_repeat,
-        #     is_other_cars=True,
-        #     port=args.port
-        # )
-        # TODO: implement env.seed(args.seed) ?
-
-        eval_env = env
-    else:
-        env = dmc2gym.make(
-            domain_name=args.domain_name,
-            task_name=args.task_name,
-            resource_files=args.resource_files,
-            img_source=args.img_source,
-            total_frames=args.total_frames,
-            seed=args.seed,
-            visualize_reward=False,
-            from_pixels=(args.encoder_type == 'pixel'),
-            height=args.image_size,
-            width=args.image_size,
-            frame_skip=args.action_repeat
-        )
-        env.seed(args.seed)
-
-        eval_env = dmc2gym.make(
-            domain_name=args.domain_name,
-            task_name=args.task_name,
-            resource_files=args.eval_resource_files,
-            img_source=args.img_source,
-            total_frames=args.total_frames,
-            seed=args.seed,
-            visualize_reward=False,
-            from_pixels=(args.encoder_type == 'pixel'),
-            height=args.image_size,
-            width=args.image_size,
-            frame_skip=args.action_repeat
-        )
+    env = gym.make(
+        "procgen:procgen-bigfish-continuous-v0",
+            start_level=0,
+            render=args.render,
+            num_levels=1)
+    eval_env = gym.make(
+        "procgen:procgen-bigfish-continuous-v0",
+            start_level=0,
+            render=args.render,
+            num_levels=1)
 
     # stack several consecutive frames together
     if args.encoder_type.startswith('pixel'):
@@ -347,10 +312,6 @@ def main():
         json.dump(vars(args), f, sort_keys=True, indent=4)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # the dmc2gym wrapper standardizes actions
-    assert env.action_space.low.min() >= -1
-    assert env.action_space.high.max() <= 1
 
     replay_buffer = utils.ReplayBuffer(
         obs_shape=env.observation_space.shape,

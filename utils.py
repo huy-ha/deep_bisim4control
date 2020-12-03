@@ -162,19 +162,21 @@ class FrameStack(gym.Wrapper):
         self.observation_space = gym.spaces.Box(
             low=0,
             high=1,
-            shape=((shp[0] * k,) + shp[1:]),
+            shape=((shp[-1] * k,) + shp[:-1]),
             dtype=env.observation_space.dtype
         )
         self._max_episode_steps = 6000
 
     def reset(self):
         obs = self.env.reset()
+        obs = np.moveaxis(obs,-1,0)
         for _ in range(self._k):
             self._frames.append(obs)
         return self._get_obs()
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
+        obs = np.moveaxis(obs,-1,0)
         self._frames.append(obs)
         return self._get_obs(), reward, done, info
 

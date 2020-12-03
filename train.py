@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--task_name', default='run')
     parser.add_argument('--image_size', default=84, type=int)
     parser.add_argument('--action_repeat', default=1, type=int)
-    parser.add_argument('--frame_stack', default=3, type=int)
+    parser.add_argument('--frame_stack', default=1, type=int)
     parser.add_argument('--resource_files', type=str)
     parser.add_argument('--eval_resource_files', type=str)
     parser.add_argument('--img_source', default=None, type=str,
@@ -72,7 +72,7 @@ def parse_args():
     parser.add_argument('--encoder_lr', default=1e-3, type=float)
     parser.add_argument('--encoder_tau', default=0.005, type=float)
     parser.add_argument('--encoder_stride', default=1, type=int)
-    parser.add_argument('--decoder_type', default='pixel', type=str, choices=[
+    parser.add_argument('--decoder_type', default='identity', type=str, choices=[
                         'pixel', 'identity', 'contrastive', 'reward', 'inverse', 'reconstruction'])
     parser.add_argument('--decoder_lr', default=1e-3, type=float)
     parser.add_argument('--decoder_update_freq', default=1, type=int)
@@ -290,11 +290,23 @@ def main():
             start_level=0,
             render=args.render,
             num_levels=1)
+    env.action_space = gym.spaces.Box(
+            low=-1,
+            high=1,
+            shape=(2,),
+            dtype=float
+        )
     eval_env = gym.make(
         "procgen:procgen-bigfish-continuous-v0",
             start_level=0,
             render=args.render,
             num_levels=1)
+    eval_env.action_space = gym.spaces.Box(
+            low=-1,
+            high=1,
+            shape=(2,),
+            dtype=float
+        )
 
     # stack several consecutive frames together
     if args.encoder_type.startswith('pixel'):
